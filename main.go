@@ -38,7 +38,7 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		fmt.Println("Health Server started at 8080")
+		fmt.Println("Gopulse Server started at 8080")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			fmt.Printf("Failed to start server: %v\n", err)
 		}

@@ -1,4 +1,4 @@
-# Service Health Checker
+# Gopulse
 
 A high-performance, concurrent service health checking tool written in Go. This application provides a REST API to monitor the availability and response status of multiple web services simultaneously using a configurable worker pool.
 
@@ -22,7 +22,7 @@ A high-performance, concurrent service health checking tool written in Go. This 
 1. Clone this repository to your local machine.
 2. Navigate to the project directory:
    ```bash
-   cd service-health-checker
+   cd gopulse
    ```
 3. Install the necessary dependencies:
    ```bash
