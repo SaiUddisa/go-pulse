@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"sync/atomic"
 	"time"
@@ -56,7 +57,9 @@ func CreateDoctor(opts ...Option) *Doctor {
 func (d *Doctor) CheckHealth(ctx context.Context, apis []API) Response {
 	//errgroup creation
 	g, ctx := errgroup.WithContext(ctx)
+	log := getLogger(ctx)
 	jobs := make(chan API)
+	metaResults := make(chan string)
 	var metadata []string
 	var processedCount int64
 	//Fan-In producer
@@ -80,7 +83,8 @@ func (d *Doctor) CheckHealth(ctx context.Context, apis []API) Response {
 				case <-ctx.Done():
 					return ctx.Err()
 				default:
-					metadata = append(metadata, checkURL(api, d.Timeout, i))
+					// metadata = append(metadata, checkURL(api, d.Timeout, i))
+					metaResults <- checkURL(api, d.Timeout, i)
 					atomic.AddInt64(&processedCount, 1)
 				}
 			}
@@ -88,12 +92,22 @@ func (d *Doctor) CheckHealth(ctx context.Context, apis []API) Response {
 
 		})
 	}
+	//to collect the meta data
+	go func() {
 
-	err := g.Wait()
-	if err != nil {
-		fmt.Printf("Error Checking Health %v\n", err)
+		err := g.Wait()
+		if err != nil {
+			log.Error("Error Checking Health", slog.String("error", err.Error()))
+		}
+		close(metaResults)
+
+	}()
+
+	for str := range metaResults {
+		metadata = append(metadata, str)
 	}
-	fmt.Printf("Health Checking Completed!!!\nTotal URLs checked %d \n", atomic.LoadInt64(&processedCount))
+
+	log.Info("Health Checking Completed!!!\nTotal URLs checked: ", slog.Int64("count", atomic.LoadInt64(&processedCount)))
 	return Response{
 		Status:  "Success",
 		Message: fmt.Sprintf("Health Checking Completed , Total URLs checked : %d", atomic.LoadInt64(&processedCount)),
@@ -108,16 +122,16 @@ func checkURL(api API, timeout time.Duration, workedId int) string {
 	case "GET":
 		res, err := client.Get(api.URL)
 		if err != nil {
-			fmt.Sprintf("Error Checking %s: %v\n", api.URL, err)
-			return ""
+			return fmt.Sprintf("Error Checking %s: %v\n", api.URL, err)
+
 		}
 		defer res.Body.Close()
 		return fmt.Sprintf("Worker %d says: [OK] %s: %d", workedId, api.URL, res.StatusCode)
 	case "POST":
 		jsonData, err := json.Marshal(api.Body)
 		if err != nil {
-			fmt.Printf("Failed to marshal body for %s: %v\n", api.URL, err)
-			return ""
+			return fmt.Sprintf("Failed to marshal body for %s: %v\n", api.URL, err)
+
 		}
 		body := bytes.NewBuffer(jsonData)
 		res, err := client.Post(api.URL, "application/json", body)
