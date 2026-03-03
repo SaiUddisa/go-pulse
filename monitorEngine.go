@@ -108,7 +108,7 @@ func checkURL(api API, timeout time.Duration, workedId int) string {
 	case "GET":
 		res, err := client.Get(api.URL)
 		if err != nil {
-			fmt.Printf("Error Checking %s: %v\n", api.URL, err)
+			fmt.Sprintf("Error Checking %s: %v\n", api.URL, err)
 			return ""
 		}
 		defer res.Body.Close()
@@ -122,7 +122,7 @@ func checkURL(api API, timeout time.Duration, workedId int) string {
 		body := bytes.NewBuffer(jsonData)
 		res, err := client.Post(api.URL, "application/json", body)
 		if err != nil {
-			fmt.Printf("Error Checking %s: %v\n", api.URL, err)
+			fmt.Sprintf("Error Checking %s: %v\n", api.URL, err)
 			return ""
 		}
 		defer res.Body.Close()

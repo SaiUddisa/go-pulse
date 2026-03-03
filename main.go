@@ -19,7 +19,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	for _, url := range jsonRequest.URLs {
 		apis = append(apis, url)
 	}
-	doctor := CreateDoctor(WithTimeout(10), WithWorkers(5))
+	doctor := CreateDoctor(WithTimeout(10), WithWorkers(200))
 	res := doctor.CheckHealth(ctx, apis)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
